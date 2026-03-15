@@ -1,5 +1,5 @@
 /**
- * ARCANA 探究システム v5.50 - JS
+ * ARCANA 探究システム v5.6.0 - JS
  * P3R Reload Style Logic & Audio
  */
 
@@ -178,6 +178,14 @@ const ArcanaSound = {
   playShutdown() {
     // SET No.02: Descending synth tone
     this.createOsc(800, 'sine', 0.1, 1.0, 0, 100);
+  },
+
+  playTaskComplete() {
+    // A melodic completion chime: Arpeggio up
+    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+    notes.forEach((f, i) => {
+      this.createOsc(f, 'sine', 0.1, 0.6, i * 0.15);
+    });
   }
 };
 

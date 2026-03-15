@@ -20,5 +20,5 @@ ARCANA Systemは、Persona 3 Reloadのビジュアルスタイルを取り入れ
 2. `index.html` をブラウザで開くだけで動作します（サーバー不要）。
 
 ## バージョン
-最新: v5.5.0
+最新: v5.6.0
 詳細な変更履歴は `version_history.md` を参照してください。
