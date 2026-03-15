@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ARCANA SYSTEM | 探究意思決定マトリクス</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
+  
+  <!-- UI Logic Dependencies -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="state-input">
+  
+  <div class="p3r-bg-container" aria-hidden="true">
+    <div class="p3r-lines"></div>
+    <div class="p3r-particles"></div>
+    <div class="p3r-waves"></div>
+    <div class="scanlines"></div>
+  </div>
+
+  <!-- Boot Overlay -->
+  <div id="boot-overlay" class="boot-overlay" style="position:fixed; inset:0; z-index:9999; background:#000; display:flex; justify-content:center; align-items:center; transition:1s;">
+    <div class="boot-logo-wrap" style="text-align:center;">
+      <h1 style="font-family:'Cinzel'; font-size:4rem; letter-spacing:15px; color:#fff;">ARCANA</h1>
+      <p style="font-family:'Orbitron'; color:#00f2ff; letter-spacing:5px;">SYSTEM BOOTING...</p>
+    </div>
+  </div>
+
+  <header class="top-bar">
+    <div class="top-left">
+      <span class="top-jp">ARCANA 探究意思決定システム</span>
+      <div class="sys-mini" style="font-family:'Share Tech Mono'; font-size:0.7rem; color:rgba(255,255,255,0.5);">
+         MOD: P3R-RELOADED | <span id="clock-display">00:00:00 JST</span>
+      </div>
+    </div>
+    <div class="top-center">
+      <div class="logo-block">
+        <span class="logo-main">ARCANA SYSTEM <span style="font-size:0.8rem; vertical-align:middle;">v5.5.0</span></span>
+      </div>
+    </div>
+    <div class="top-right">
+      <div class="status-wrap">
+        <button id="lore-open-btn" class="lore-btn">SYSTEM LORE</button>
+        <div id="status-led" class="status-led"></div>
+        <span id="status-label" class="status-label">STANDBY</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="viewport">
+    
+    <!-- SCREEN 1: INPUT -->
+    <section id="screen-input" class="screen">
+      <div class="screen-content" style="max-width:1200px; width:100%; margin:0 auto; display:flex; flex-direction:column; gap:40px;">
+        <div class="input-header" style="transform: skewX(-15deg);">
+          <h1 style="font-family:'Cinzel'; font-size:3rem; margin-bottom:10px; border-left:10px solid #00f2ff; padding-left:20px;">DIVE INTO ARCANA</h1>
+          <p style="color:#00f2ff; font-weight:700;">5つのアルカナが、あなたの提案を多角的に検証します。</p>
+        </div>
+
+        <div class="input-grid" style="display:grid; grid-template-columns: 1.2fr 1fr; gap:30px;">
+          <div class="input-panel">
+            <div class="form-group">
+              <label class="form-label">議題・テーマ</label>
+              <textarea id="kadai-input" placeholder="探究課題のテーマを入力してください..." rows="3"></textarea>
+            </div>
+            <div class="form-group" style="margin-top:20px;">
+              <label class="form-label">具体的な提案内容</label>
+              <textarea id="teian-input" placeholder="検証したい具体的なプランを入力してください..." rows="8"></textarea>
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:20px;">
+            <div class="input-panel">
+              <label class="form-label">データ抽出 / 自動入力</label>
+              <div id="drop-zone" style="border:2px dashed rgba(0,242,255,0.4); padding:30px; text-align:center; background:rgba(0,0,0,0.4); cursor:pointer;" onclick="document.getElementById('file-input').click()">
+                <input type="file" id="file-input" style="display:none;" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt">
+                <span style="font-size:2rem;">📁</span>
+                <p style="font-size:0.8rem; margin-top:10px; color:#00f2ff;">ファイルをドロップまたはクリック</p>
+              </div>
+            </div>
+            
+            <div class="input-panel">
+              <label class="form-label">音響セット選択</label>
+              <div class="audio-selector">
+                <button class="audio-set-btn active" data-set="1">No.01 [Standard Cyan]</button>
+                <button class="audio-set-btn" data-set="2">No.02 [P3R-Style Hybrid]</button>
+              </div>
+            </div>
+
+            <button id="start-judgment-btn" class="main-execute-btn" style="margin-top:auto;">
+              審議を開始する
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCREEN 2: RESULT -->
+    <section id="screen-result" class="screen">
+      <div class="result-layout">
+        
+        <div class="context-display-top">
+          <div class="context-item">
+            <span class="c-label">議題</span>
+            <div id="summary-kadai" class="c-value">---</div>
+          </div>
+          <div class="context-item">
+            <span class="c-label">提案名</span>
+            <div id="summary-teian" class="c-value">---</div>
+          </div>
+          <div class="context-actions">
+            <button id="back-to-input-btn" class="p3r-mini-btn">再編集</button>
+          </div>
+        </div>
+
+        <div class="stage-container">
+          <div class="matrix-rotator" id="matrix-rotator">
+            <!-- ARCANA Units -->
+            <div class="ai-unit magician" id="unit-magician">
+              <div class="card-flipper">
+                <div class="card-front">
+                  <img src="assets/magician.png" alt="MAGICIAN" class="tarot-full-img">
+                  <div class="card-label">THE MAGICIAN</div>
+                </div>
+                <div class="card-back">
+                  <div class="unit-inner">
+                    <div class="unit-header">
+                      <div class="unit-name">MAGICIAN</div>
+                      <div class="unit-role">科学・技術</div>
+                      <div class="unit-vote">—</div>
+                    </div>
+                    <div class="unit-scores"></div>
+                    <div class="unit-reason">Waiting...</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ai-unit justice" id="unit-justice">
+              <div class="card-flipper">
+                <div class="card-front">
+                  <img src="assets/justice.png" alt="JUSTICE" class="tarot-full-img">
+                  <div class="card-label">JUSTICE</div>
+                </div>
+                <div class="card-back">
+                  <div class="unit-inner">
+                    <div class="unit-header">
+                      <div class="unit-name">JUSTICE</div>
+                      <div class="unit-role">倫理・社会</div>
+                      <div class="unit-vote">—</div>
+                    </div>
+                    <div class="unit-scores"></div>
+                    <div class="unit-reason">Waiting...</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ai-unit lovers" id="unit-lovers">
+              <div class="card-flipper">
+                <div class="card-front">
+                  <img src="assets/lovers.png" alt="LOVERS" class="tarot-full-img">
+                  <div class="card-label">THE LOVERS</div>
+                </div>
+                <div class="card-back">
+                  <div class="unit-inner">
+                    <div class="unit-header">
+                      <div class="unit-name">LOVERS</div>
+                      <div class="unit-role">感情・人間関係</div>
+                      <div class="unit-vote">—</div>
+                    </div>
+                    <div class="unit-scores"></div>
+                    <div class="unit-reason">Waiting...</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ai-unit empress" id="unit-empress">
+              <div class="card-flipper">
+                <div class="card-front">
+                  <img src="assets/empress.png" alt="EMPRESS" class="tarot-full-img">
+                  <div class="card-label">THE EMPRESS</div>
+                </div>
+                <div class="card-back">
+                  <div class="unit-inner">
+                    <div class="unit-header">
+                      <div class="unit-name">EMPRESS</div>
+                      <div class="unit-role">豊穣・資源</div>
+                      <div class="unit-vote">—</div>
+                    </div>
+                    <div class="unit-scores"></div>
+                    <div class="unit-reason">Waiting...</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ai-unit star" id="unit-star">
+              <div class="card-flipper">
+                <div class="card-front">
+                  <img src="assets/star.png" alt="STAR" class="tarot-full-img">
+                  <div class="card-label">THE STAR</div>
+                </div>
+                <div class="card-back">
+                  <div class="unit-inner">
+                    <div class="unit-header">
+                      <div class="unit-name">STAR</div>
+                      <div class="unit-role">希望・未来</div>
+                      <div class="unit-vote">—</div>
+                    </div>
+                    <div class="unit-scores"></div>
+                    <div class="unit-reason">Waiting...</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="magi-core" style="position:absolute; width:150px; height:150px; border-radius:50%; background:radial-gradient(circle, var(--p3r-cyan) 0%, transparent 70%); opacity:0.3; filter:blur(20px); z-index:0;"></div>
+            <div class="core-label" style="position:absolute; bottom:-100px; font-family:'Cinzel'; font-size:1.5rem; color:var(--p3r-cyan); width:100%; text-align:center;">READY</div>
+          </div>
+        </div>
+
+        <aside class="verdict-sidebar">
+          <div id="final-box" class="final-box">
+            <p class="fb-label">ARCANA 最終判断</p>
+            <h2 id="fb-result" class="fb-result">WAITING</h2>
+            <p id="fb-tally">---</p>
+          </div>
+          <div id="ab-content" style="margin-top:20px; font-size:0.9rem; line-height:1.6; border-top:1px solid rgba(255,255,255,0.2); padding-top:20px;">分析待機中...</div>
+          <button id="reset-btn" class="reset-all-btn">REBOOT SYSTEM</button>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast">MESSAGE</div>
+
+  <!-- LORE OVERLAY -->
+  <div id="lore-overlay" class="lore-overlay">
+    <div class="lore-modal">
+      <div class="lore-header" style="background:rgba(0,0,0,0.5); padding:20px 40px; border-bottom:2px solid var(--p3r-cyan); display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="font-family:'Cinzel';">ARCANA PERSONALITIES & HISTORY</h2>
+        <button id="lore-close-btn" class="p3r-mini-btn">CLOSE</button>
+      </div>
+      <div class="lore-container">
+        
+        <div class="lore-item magician">
+          <h3>Ⅰ. MAGICIAN（魔術師）</h3>
+          <p class="l-role">象徴：知識・技術 | 元：MELCHIOR</p>
+          <p>科学、ロジック、技術的実現可能性を重視。冷静な計算に基づき、客観的なデータから「可能か不可能か」を冷徹に判断するアルカナ。</p>
+        </div>
+
+        <div class="lore-item justice">
+          <h3>Ⅷ. JUSTICE（正義）</h3>
+          <p class="l-role">象徴：正義・公平 | 元：BALTHASAR</p>
+          <p>倫理、社会正義、公益性を監視。提案が「正しいか、不平等を生んでいないか」を審議。社会的なバランスと持続可能性を追求する。</p>
+        </div>
+
+        <div class="lore-item lovers">
+          <h3>Ⅵ. THE LOVERS（恋人）</h3>
+          <p class="l-role">象徴：感情・人間関係 | 元：CASPER</p>
+          <p>人間心理、共感、ネットワーク、魅力を評価。「人々がそれを望むか、幸せになれるか」という情緒的面を鋭く分析する。</p>
+        </div>
+
+        <div class="lore-item empress">
+          <h3>Ⅲ. THE EMPRESS（女帝）</h3>
+          <p class="l-role">象徴：豊穣・資源 | 元：MERCURIUS</p>
+          <p>経済、リソース配分、産業的影響を考慮。利益、コスト、生産性の観点から「実りある結果をもたらすか」を重視する。</p>
+        </div>
+
+        <div class="lore-item star">
+          <h3>ⅩⅦ. THE STAR（星）</h3>
+          <p class="l-role">象徴：希望・未来 | 元：FUTURUM</p>
+          <p>未来、可能性、イノベーションを探究。長期的な視点から「未来に希望をつなげるか、次世代の理想となるか」を予見する。</p>
+        </div>
+
+        <!-- Version History Section -->
+        <div class="version-history-sect">
+          <h2 class="v-header">ARCANA System - バージョン履歴</h2>
+          
+          <div class="v-entry">
+            <div class="v-version">【v5.5.0】 <span class="v-date">2026-03-15（最新）</span></div>
+            <ul class="v-list">
+              <li>カード演出の再構成：3Dフリップ演出と重なり（z-index）制御を実装。解析中のカードが前面に強調されるよう調整。</li>
+              <li>音響システムのブラッシュアップ：P3R風のハイブリッド・サウンドセット（No.02）を正式採用。</li>
+              <li>UIスタックの最適化：高解像度モニター環境におけるカード配置アルゴリズムを改良。</li>
+            </ul>
+          </div>
+
+          <div class="v-entry">
+            <div class="v-version">【v5.2.8】 <span class="v-date">2026-03-14</span></div>
+            <ul class="v-list">
+              <li>名称変更：システム名称を「MAGI」から「ARCANA System」に変更。</li>
+              <li>アルカナ人格：AI人格を3体から5体へ増加し、役割を更新。</li>
+              <li>自動分析機能：テキスト抽出エンジンの初期実装。</li>
+            </ul>
+          </div>
+
+          <div class="v-entry">
+            <div class="v-version">【v5.0.0】 <span class="v-date">2026-03-14</span></div>
+            <ul class="v-list">
+              <li>アーキテクチャ刷新：2画面構成とWeb Audio APIによるサウンド制御。</li>
+              <li>ビジュアル刷新：未来的ネオン・テーマとCRTスキャンライン効果の実装。</li>
+            </ul>
+          </div>
+
+          <div class="v-entry">
+            <div class="v-version">【v1.0.0】 <span class="v-date">2026-03-10</span></div>
+            <ul class="v-list">
+              <li>プロジェクト発足：3人格による多数決意思決定。</li>
+              <li>刀プロジェクト：産学連携クロスコラボレーション用プロトタイプ。</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="magi.js"></script>
+</body>
+</html>
