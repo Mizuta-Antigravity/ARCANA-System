@@ -375,19 +375,21 @@ textarea {
 .lore-overlay.active { opacity: 1; pointer-events: auto; }
 
 .lore-modal {
-  width: 90%; max-width: 1200px; height: 80vh;
+  width: 90%; max-width: 1200px; height: 85vh;
   background: var(--p3r-blue-mid); border: 2px solid var(--p3r-cyan);
-  display: flex; flex-direction: column; transform: skewX(-2deg);
+  display: flex; flex-direction: column;
   box-shadow: 0 0 100px rgba(0, 242, 255, 0.2);
   position: relative;
   overflow: hidden;
+  border-radius: 8px;
 }
-.lore-modal > * { transform: skewX(2deg); }
+.lore-modal > * { transform: none; }
 
 .lore-container {
   flex: 1; overflow-y: auto; 
-  padding: 40px 60px 120px 60px; /* Padding for bottom visibility */
-  display: flex; flex-direction: column; gap: 20px;
+  padding: 40px 60px;
+  display: flex; flex-direction: column; gap: 30px;
+  scroll-behavior: smooth;
 }
 
 .lore-item {
