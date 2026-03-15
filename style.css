@@ -403,7 +403,7 @@ textarea {
   align-items: flex-start;
   transition: 0.3s var(--transition-p3r);
   position: relative;
-  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .lore-icon {
@@ -485,6 +485,7 @@ textarea {
 /* Version History Styles */
 .version-history-sect {
   margin-top: 40px; padding-top: 40px; border-top: 1px dashed rgba(0, 242, 255, 0.3);
+  flex-shrink: 0;
 }
 .v-header { font-family: var(--f-arcana); color: var(--p3r-cyan); font-size: 1.8rem; margin-bottom: 20px; }
 .v-entry { margin-bottom: 30px; }
